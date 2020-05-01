@@ -1,0 +1,65 @@
+---
+title: "Tuning Grids"
+author: "Ryan Fabricius"
+date: "4/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This mardown serves to create the models and their corresponding tuning grids for the different classification methods. These will be saved here and loaded into the tune markdown. The individual grids and models will be located in the models folder.
+
+```{r}
+# Load libraries
+library(dplyr)
+library(tune)
+library(parsnip)
+```
+
+```{r}
+# Create parsnip models
+
+# glmnet model
+glmnet.mod <- logistic_reg(
+      penalty = tune(),
+      mixture = tune(),
+      mode = "classification") %>% 
+  set_engine("glmnet")
+
+# Random Forest Model
+rf.mod <- rand_forest(
+      mode = "classification",
+      mtry = tune(),
+      min_n = tune(),
+      trees = tune()) %>% 
+  set_engine("ranger")
+```
+
+```{r}
+# Save Models
+saveRDS(glmnet.mod, file = "../models/glmnet_mod.rds")
+saveRDS(rf.mod, file = "../models/rf_mod.rds")
+```
+
+```{r}
+# Create Hyperparameter Grid for glmnet model
+glmnet.grid <- glmnet.mod %>% 
+      parameters() %>% 
+      grid_max_entropy(size = 50)
+
+# Create Hyperparameter Grid for random forest model
+rf.grid <- rf.mod %>% 
+  parameters() %>% 
+  update(mtry = mtry(c(1L, 5L)),
+         trees = trees(c(200L, 500L)) )%>% 
+  grid_max_entropy(size = 50)
+```
+
+```{r}
+# Save grids
+saveRDS(glmnet.grid, file = "../models/glmnet_grid.rds")
+saveRDS(rf.grid, file = "../models/rf_grid.rds")
+```
+

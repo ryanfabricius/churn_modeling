@@ -1,0 +1,59 @@
+---
+title: "Churn Data Split"
+author: "Ryan Fabricius"
+date: "4/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This markdown's purpose is to document the data set up. This includes the split between training/testing, along with analysis/assessment sets within the cross-validation folds.
+
+```{r}
+# Load libraries
+library(dplyr)
+library(rsample)
+library(readr)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Read in data
+churn.raw <- read_csv("data/Churn_Modelling.csv") %>%
+  
+  # Eliminating the one and only row with NA values which includes outcome
+  dplyr::filter(complete.cases(.))
+```
+
+```{r}
+# Test/train split
+set.seed(1776)
+churn.split <- initial_split(churn.raw)
+
+# Extract training/testing data
+churn.training <- training(churn.split)
+churn.testing <- testing(churn.split)
+
+# Create cross validation set
+churn.cv <- vfold_cv(churn.training, v = 10)
+```
+
+```{r, eval=FALSE}
+# Save data
+saveRDS(churn.training, file = "../data/churn_training.rds")
+saveRDS(churn.testing, file = "../data/churn_testing.rds")
+saveRDS(churn.cv, file = "../data/churn_cv.rds")
+```
+
+
+
+
+
+
+
+
+
+
+
+

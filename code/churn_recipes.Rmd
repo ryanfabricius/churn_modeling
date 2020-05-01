@@ -1,0 +1,175 @@
+---
+title: "Churn Recipes"
+author: "Ryan Fabricius"
+date: "4/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This markdown serves to document and save the various recipes used in modeling. The only differences among the recipes are the methods of dealing with class imbalance. The four methods being used are:  
+- No technique (leave data as is)  
+- Oversampling  
+- Smote  
+- bSmote  
+
+To change the method within each recipe, the new packages called Themis will be used.
+
+```{r}
+# Load Libraries
+library(dplyr)
+library(recipes)
+library(readr)
+library(themis)
+```
+
+```{r}
+# Load Data
+churn.training <- readRDS("../data/churn_training.rds")
+```
+
+```{r}
+# Define the recipe
+churn.recipe.no <- recipe(Exited ~ ., 
+                          data = head(churn.training)) %>% 
+  
+  # Remove surname and rownumber
+  step_rm(one_of("RowNumber", "Surname")) %>% 
+  
+  # Carry's non-predictors through model
+  update_role(CustomerId, new_role = "Helper") %>% 
+  
+  # Convert outcome to nominal
+  step_num2factor(all_outcomes(), 
+                  levels = c("No", "Yes"),
+                  transform = function(x) {x + 1}) %>% 
+  
+  # Scale and Center Data
+  step_normalize(all_numeric(), -has_role(match = "Helper")) %>% 
+  
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal(), -all_outcomes(), -has_role(match = "Helper")) %>% 
+  
+  # Remove correlated and near zero predictors
+  step_corr(all_numeric(), -has_role("Helper")) %>% 
+  step_nzv(all_predictors())
+```
+
+```{r}
+# Define the recipe
+churn.recipe.rose <- recipe(Exited ~ ., 
+                          data = head(churn.training)) %>% 
+  
+  # Remove surname and rownumber
+  step_rm(one_of("RowNumber", "Surname")) %>% 
+  
+  # Carry's non-predictors through model
+  update_role(CustomerId, new_role = "Helper") %>% 
+  
+  # Convert outcome to nominal
+  step_num2factor(all_outcomes(), 
+                  levels = c("No", "Yes"),
+                  transform = function(x) {x + 1}) %>% 
+  
+  # Scale and Center Data
+  step_normalize(all_numeric(), -has_role(match = "Helper")) %>% 
+  
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal(), -all_outcomes(), -has_role(match = "Helper")) %>% 
+  
+  # Remove correlated and near zero predictors
+  step_corr(all_numeric(), -has_role("Helper")) %>% 
+  step_nzv(all_predictors()) %>% 
+  
+  # Deal with class imbalance
+  step_rose(Exited)
+```
+
+```{r}
+# Define the recipe
+churn.recipe.sm <- recipe(Exited ~ ., 
+                          data = head(churn.training)) %>% 
+  
+  # Remove surname and rownumber
+  step_rm(one_of("RowNumber", "Surname")) %>% 
+  
+  # Carry's non-predictors through model
+  update_role(CustomerId, new_role = "Helper") %>% 
+  
+  # Convert outcome to nominal
+  step_num2factor(all_outcomes(), 
+                  levels = c("No", "Yes"),
+                  transform = function(x) {x + 1}) %>% 
+  
+  # Scale and Center Data
+  step_normalize(all_numeric(), -has_role(match = "Helper")) %>% 
+  
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal(), -all_outcomes(), -has_role(match = "Helper")) %>% 
+  
+  # Remove correlated and near zero predictors
+  step_corr(all_numeric(), -has_role("Helper")) %>% 
+  step_nzv(all_predictors()) %>% 
+  
+  # Deal with class imbalance
+  step_smote(value = "Exited")
+```
+
+```{r}
+# Define the recipe
+churn.recipe.up <- recipe(Exited ~ ., 
+                          data = head(churn.training)) %>% 
+  
+  # Remove surname and rownumber
+  step_rm(one_of("RowNumber", "Surname")) %>% 
+  
+  # Carry's non-predictors through model
+  update_role(CustomerId, new_role = "Helper") %>% 
+  
+  # Convert outcome to nominal
+  step_num2factor(all_outcomes(), 
+                  levels = c("No", "Yes"),
+                  transform = function(x) {x + 1}) %>% 
+  
+  # Scale and Center Data
+  step_normalize(all_numeric(), -has_role(match = "Helper")) %>% 
+  
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal(), -all_outcomes(), -has_role(match = "Helper")) %>% 
+  
+  # Remove correlated and near zero predictors
+  step_corr(all_numeric(), -has_role("Helper")) %>% 
+  step_nzv(all_predictors()) %>% 
+  
+  # Deal with class imbalance
+  step_upsample(Exited)
+```
+
+```{r}
+# Save recipes
+saveRDS(churn.recipe.no, "../models/churn_recipe_none.rds")
+saveRDS(churn.recipe.sm, "../models/churn_recipe_smote.rds")
+saveRDS(churn.recipe.rose, "../models/churn_recipe_rose.rds")
+saveRDS(churn.recipe.up, "../models/churn_recipe_up_sampling.rds")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

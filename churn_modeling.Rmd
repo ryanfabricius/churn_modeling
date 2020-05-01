@@ -1,0 +1,55 @@
+---
+title: "Churn Modeling"
+author: "Ryan Fabricius"
+date: "4/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Churn rate is defined as the proportion of a customer base to leave their service provider in a specified period of time. What if churn rate could be predicted by predicting wether each individual memeber will churn? Two business aspects come to mind when thinking about the impact of this model. Finance could use the model to increase the accuracy of their revenue forcasts, and initiatives could be made to these members to increase retainment.
+
+The [Churn Modeling Dataset](https://www.kaggle.com/shrutimechlearn/churn-modelling) was downloaded from Kaggle, containing 14 columns and 9750 rows.
+
+```{r, include=FALSE}
+# Load Libraries
+library(tidyverse)
+library(tidymodels)
+library(dplyr)
+library(readr)
+```
+
+```{r, echo=FALSE}
+# Read in data
+churn.raw <- read_csv("data/Churn_Modelling.csv") %>%
+  
+  # Eliminating the one and only row with NA values which includes outcome
+  dplyr::filter(complete.cases(.))
+
+# Display data
+str(churn.raw)
+```
+
+When doealing with binary classification, it is important to analzye the class proportions. Machine learning techniques tend provide better results when the classes are balanced.
+
+```{r, echo=FALSE}
+# Read in imbalance bar graph
+read_rds("./graphs/imbalance_bar.rds")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

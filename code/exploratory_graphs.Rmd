@@ -1,0 +1,183 @@
+---
+title: "Exploratory Graphs"
+author: "Ryan Fabricius"
+date: "4/30/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+The purpose of this markdown is to create and save exploratory graphs to be loaded in the final document.
+
+```{r}
+# Load libraries
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(cowplot)
+library(gridExtra)
+```
+
+```{r}
+# Load custom functions
+retrieve_legend<-function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+```
+
+```{r}
+# Load Data
+churn.training <- readRDS("../data/churn_training.rds")
+churn.testing <- readRDS("../data/churn_testing.rds")
+churn.cv <- readRDS("../data/churn_cv.rds")
+```
+
+```{r, fig.align="center"}
+# Examine class balance
+imbalance.bar <- churn.training %>% 
+        summarise(Churn = sum(Exited, na.rm = T)) %>% 
+        mutate(Retained = nrow(churn.training) - Churn) %>% 
+        pivot_longer(., cols = one_of("Churn", "Retained"),
+                     names_to = "Result",
+                     values_to = "Value"
+        ) %>% 
+        ggplot(., aes(x = Result, y = Value, fill = Result)) +
+        geom_bar(stat = "identity", 
+                 width = 0.5) +
+        theme_classic() +
+        theme(legend.position = "none",
+              panel.background = element_rect(fill = "#000015"),
+              plot.background = element_rect(fill = "#000015"),
+              text = element_text(colour = "#b3b3b3"),
+              axis.text = element_text(colour = "#b3b3b3"),
+              axis.line = element_blank(),
+              plot.title = element_text(hjust = 0.5)) +
+        scale_y_continuous(labels = scales::comma) +
+        scale_fill_manual(values = c("#ff6600", "#3399ff")) +
+        ggtitle(label = "Moderate Class Imbalance")
+```
+
+```{r, include=FALSE}
+# Select columns needed for graphing
+class.seperation <- churn.training %>% 
+  dplyr::select(one_of("CreditScore",
+                       "Age",
+                       "Exited",
+                       "Balance",
+                       "EstimatedSalary")) %>% 
+  mutate(Churned = ifelse(Exited == 1, "Yes", "No")) %>% 
+  dplyr::filter(complete.cases(.))
+
+# Graph 1
+g1 <- ggplot(class.seperation, aes(x = Age,
+                                   y = EstimatedSalary,
+                                   color = Churned,
+                                   alpha = .05)) +
+  geom_point() +
+  theme_classic() +
+  theme(legend.background = element_rect(fill = "#000015"),
+        legend.position = "top",
+        panel.background = element_rect(fill = "#000015"),
+        plot.background = element_rect(fill = "#000015"),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
+        axis.line = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_manual(values = c("#ff6600", "#3399ff")) +
+  ggtitle(label = "Salary vs. Age") + 
+  guides(alpha = FALSE,
+         color = guide_legend(reverse = T))
+
+# Retrieve legend for graphs
+legend <- retrieve_legend(g1)
+
+# Remove legend for Graph 1
+g1 <- g1 + theme(legend.position = "none")
+
+# Graph 2
+g2 <- ggplot(class.seperation, aes(x = Age,
+                                   y = CreditScore,
+                                   color = Churned,
+                                   alpha = 0.5)) +
+  geom_point() +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#000015"),
+        plot.background = element_rect(fill = "#000015"),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
+        axis.line = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_manual(values = c("#ff6600", "#3399ff")) +
+  ggtitle(label = "Credit Score vs. Age") +
+  guides(alpha = FALSE)
+
+# Graph 3
+g3 <- ggplot(class.seperation, aes(x = Age,
+                                   y = Balance,
+                                   color = Churned,
+                                   alpha = 0.5)) +
+  geom_point() +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#000015"),
+        plot.background = element_rect(fill = "#000015"),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
+        axis.line = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_manual(values = c("#ff6600", "#3399ff")) +
+  ggtitle(label = "Balance vs. Age") +
+  guides(alpha = FALSE)
+
+# Graph 4
+g4 <- ggplot(class.seperation, aes(x = CreditScore,
+                                   y = Balance,
+                                   color = Churned,
+                                   alpha = 0.5)) +
+  geom_point() +
+  theme_classic() +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#000015"),
+        plot.background = element_rect(fill = "#000015"),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
+        axis.line = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_manual(values = c("#ff6600", "#3399ff")) +
+  ggtitle(label = "Credit Score vs. Balance") +
+  guides(alpha = FALSE)
+
+# Create grid for graphs
+grid <- grid.arrange(g1, g2, g3, g4, legend,
+                     nrow = 3, 
+                     ncol = 2,
+                     layout_matrix = rbind(c(1,2), c(3,4), c(5,5)),
+                     widths = c(2.7, 2.7),
+                     heights = c(2.5, 2.5, .5))
+
+grid2 <- cowplot::ggdraw(grid) +
+  theme(plot.background = element_rect(fill = "#000015"))
+```
+
+```{r, fig.width=12, fig.height=8, fig.align="center"}
+saveRDS(imbalance.bar, "../graphs/imbalance_bar.rds")
+saveRDS(grid2, "../graphs/imbalance_grid.rds")
+```
+
+
+
+
+
+
+
+

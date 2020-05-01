@@ -1,0 +1,233 @@
+---
+title: "Churn Modeling"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+# Load libraries
+library(tidyverse)
+library(tidymodels)
+library(rsample)
+library(glmnet)
+library(ranger)
+library(dials)
+library(tune)
+library(workflows)
+library(readr)
+```
+
+```{r}
+# Load cross validation data
+churn.cv <- read_rds("../data/churn_cv.rds")
+```
+
+```{r}
+# Load recipes
+churn.recipe.no <- read_rds("../models/churn_recipe_none.rds")
+churn.recipe.sm <- read_rds("../models/churn_recipe_smote.rds")
+churn.recipe.rose <- read_rds("../models/churn_recipe_rose.rds")
+churn.recipe.up <- read_rds("../models/churn_recipe_up_sampling.rds")
+```
+
+```{r}
+# Load models
+glmnet.mod <- read_rds("../models/glmnet_mod.rds")
+rf.mod <- read_rds("../models/rf_mod.rds")
+```
+
+```{r}
+# Load tuning grids
+glmnet.grid <- read_rds("../models/glmnet_grid.rds")
+rf.grid <- read_rds("../models/rf_grid.rds")
+```
+
+```{r}
+# Fit Workflows
+
+######## glmnet workflows ########
+
+# No class imbalance method
+glmnet.wrkflw.no <- workflow() %>% 
+  add_recipe(churn.recipe.no) %>% 
+  add_model(glmnet.mod)
+
+# Smote
+glmnet.wrkflw.sm <- glmnet.wrkflw.no %>% 
+  update_recipe(churn.recipe.sm)
+
+# Rose
+glmnet.wrkflw.rose <- glmnet.wrkflw.no %>% 
+  update_recipe(churn.recipe.rose)
+
+# Up-sampling
+glmnet.wrkflw.up <- glmnet.wrkflw.no %>% 
+  update_recipe(churn.recipe.up)
+
+######## rf workflows ########
+
+# No class imbalance method
+rf.wrkflw.no <- workflow() %>% 
+  add_recipe(churn.recipe.no) %>% 
+  add_model(rf.mod)
+
+# Smote
+rf.wrkflw.sm <- rf.wrkflw.no %>% 
+  update_recipe(churn.recipe.sm)
+
+# Rose
+rf.wrkflw.rose <- rf.wrkflw.no %>% 
+  update_recipe(churn.recipe.rose)
+
+# Up-sampling
+rf.wrkflw.up <- rf.wrkflw.no %>% 
+  update_recipe(churn.recipe.up)
+```
+
+Model tuning is split into two chunks due to run time.
+
+```{r}
+# Tune models over cv sets
+set.seed(12)
+# Glmnet Models
+glmnet.wrkflw.tuned.no <- glmnet.wrkflw.no %>% 
+  tune_grid(resamples = churn.cv,
+            grid = glmnet.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+glmnet.wrkflw.tuned.sm <- glmnet.wrkflw.sm %>% 
+  tune_grid(resamples = churn.cv,
+            grid = glmnet.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+glmnet.wrkflw.tuned.rose <- glmnet.wrkflw.rose %>% 
+  tune_grid(resamples = churn.cv,
+            grid = glmnet.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+glmnet.wrkflw.tuned.up <- glmnet.wrkflw.up %>% 
+  tune_grid(resamples = churn.cv,
+            grid = glmnet.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+# Random Forrest Models
+rf.wrkflw.tuned.no <- rf.wrkflw.no %>% 
+  tune_grid(resamples = churn.cv,
+            grid = rf.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+rf.wrkflw.tuned.sm <- rf.wrkflw.sm %>% 
+  tune_grid(resamples = churn.cv,
+            grid = rf.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+rf.wrkflw.tuned.rose <- rf.wrkflw.rose %>% 
+  tune_grid(resamples = churn.cv,
+            grid = rf.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+rf.wrkflw.tuned.up <- rf.wrkflw.up %>% 
+  tune_grid(resamples = churn.cv,
+            grid = rf.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+```
+
+```{r}
+# saveRDS(glmnet.wrkflw.tuned.no, "../models/glmnet_wrkflw_tuned_none.rds")
+# saveRDS(glmnet.wrkflw.tuned.sm, "../models/glmnet_wrkflw_tuned_smote.rds")
+# saveRDS(glmnet.wrkflw.tuned.rose, "../models/glmnet_wrkflw_tuned_rose.rds")
+# saveRDS(glmnet.wrkflw.tuned.up, "../models/glmnet_wrkflw_tuned_up.rds")
+# saveRDS(rf.wrkflw.tuned.no, "../models/rf_wrkflw_tuned_none.rds")
+# saveRDS(rf.wrkflw.tuned.sm, "../models/rf_wrkflw_tuned_smote.rds")
+# saveRDS(rf.wrkflw.tuned.rose, "../models/rf_wrkflw_tuned_rose.rds")
+# saveRDS(rf.wrkflw.tuned.up, "../models/rf_wrkflw_tuned_up.rds")
+```
+
+```{r}
+# Create list of models
+model.list.set1 <- tibble(glmnet.wrkflw.tuned.no,
+                   glmnet.wrkflw.tuned.sm,
+                   glmnet.wrkflw.tuned.rose,
+                   glmnet.wrkflw.tuned.up,
+                   rf.wrkflw.tuned.no,
+                   rf.wrkflw.tuned.sm,
+                   rf.wrkflw.tuned.rose,
+                   rf.wrkflw.tuned.up
+                   )
+
+# Create metric tibble for models
+model.metrics.set1.auc <- tibble(models = c(map(.x = model.list.set1,
+                                              ~show_best(.x, metric = "roc_auc", 1)))) %>% 
+  unnest(models) %>% 
+  mutate(model = c("glmnet",
+                   "glmnet",
+                   "glmnet",
+                   "glmnet",
+                   "Random Forest",
+                   "Random Forest",
+                   "Random Forest",
+                   "Random Forest"),
+         class.imbalance = c("None",
+                             "Smote",
+                             "Rose",
+                             "Up-sampling",
+                             "None",
+                             "Smote",
+                             "Rose",
+                             "Up-sampling")) %>% 
+  dplyr::select(one_of(".metric",
+                       ".estimator",
+                       "mean",
+                       "std_err",
+                       "model",
+                       "class.imbalance"))
+
+model.metrics.set1.accuracy <- tibble(models = c(map(.x = model.list.set1,
+                                              ~show_best(.x, metric = "accuracy", 1)))) %>% 
+  unnest(models) %>% 
+  mutate(model = c("glmnet",
+                   "glmnet",
+                   "glmnet",
+                   "glmnet",
+                   "Random Forest",
+                   "Random Forest",
+                   "Random Forest",
+                   "Random Forest"),
+         class.imbalance = c("None",
+                             "Smote",
+                             "Rose",
+                             "Up-sampling",
+                             "None",
+                             "Smote",
+                             "Rose",
+                             "Up-sampling")) %>% 
+  dplyr::select(one_of(".metric",
+                       ".estimator",
+                       "mean",
+                       "std_err",
+                       "model",
+                       "class.imbalance"))
+
+# Combine accuracy and auc tibbles for first set of models
+model.metrics.1 <- model.metrics.set1.auc %>% 
+  rbind(model.metrics.set1.accuracy)
+
+model.metrics.1
+```
+
+
+
+
+
+
