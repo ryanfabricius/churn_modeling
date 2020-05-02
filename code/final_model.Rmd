@@ -1,0 +1,123 @@
+---
+title: "Untitled"
+author: "Ryan Fabricius"
+date: "5/2/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load Libraries
+library(dplyr)
+library(workflows)
+library(parsnip)
+library(rsample)
+library(tune)
+library(dials)
+library(xgboost)
+library(yardstick)
+library(readr)
+library(recipes)
+library(ggplot2)
+library(pROC)
+```
+
+# Final Model
+
+```{r}
+# Read in XGBoost components
+xgb.mod <- read_rds("../models/xgb_mod.rds")
+xgb.up.params <- read_rds("../models/xgb_up_params.rds")
+churn.recipe.up <- read_rds("../models/churn_recipe_up_sampling.rds")
+churn.split <- read_rds("../data/churn_split.rds")
+```
+
+```{r}
+# Create finalized worflow
+xgb.wrkflw.finalized <- workflow() %>% 
+        add_model(xgb.mod) %>% 
+        add_recipe(churn.recipe.up) %>% 
+        finalize_workflow(xgb.up.params)
+
+# Final fit
+xgb.final.fit <- xgb.wrkflw.finalized %>% 
+        last_fit(churn.split)
+```
+
+```{r}
+# Create ROC curve
+xgb.roc.curve <- xgb.final.fit %>%
+        collect_predictions() %>% 
+        dplyr::select(.pred_Yes, Exited) %>% 
+        ggplot(., aes(d = Exited, m = .pred_Yes, color = "#cc0000")) +
+        geom_roc(cutoffs.at = .564,
+                 pointsize = 0.65,
+                 labelround = 3, 
+                 color = "#3399ff",
+                 linealpha = 0.50) +
+        theme_classic() +
+        theme(legend.position = "bottom",
+              legend.background = element_rect(fill = "#000027",
+                                               colour = "#b3b3b3"),
+              panel.background = element_rect(fill = "#000027"),
+              plot.background = element_rect(fill = "#000027"),
+              text = element_text(colour = "#b3b3b3"),
+              axis.text = element_text(colour = "#b3b3b3"),
+              axis.line = element_blank(),
+              plot.title = element_text(hjust = 0.5),
+              plot.subtitle = element_text(hjust = 0.5,
+                                           size = 8,
+                                           face = "italic")) +
+        xlab("1 - Specificity") +
+        ylab("Sensitivity") +
+        ggtitle("ROC Curve", 
+                subtitle = "Optimal Threshold defined by Youden Index")
+
+xgb.roc.curve
+
+saveRDS(xgb.roc.curve, file = "../graphs/roc_curve.rds")
+```
+
+```{r}
+# Predictions using threshold
+last.fit.pred <- xgb.final.fit %>% 
+        collect_predictions() %>% 
+        mutate(pred.class = factor(ifelse(.pred_Yes >= .564, "Yes", "No"))) %>% 
+        dplyr::select(pred.class, Exited) 
+
+conf.mat <- conf_mat(last.fit.pred, truth = Exited, estimate = pred.class)[[1]] %>% 
+        as_tibble() %>% 
+        ggplot(aes(Prediction, Truth, alpha = n)) +
+        geom_tile(fill = "blue") +
+        geom_text(aes(label = n), 
+                  color = "white",
+                  alpha = .8,
+                  size = 10) +
+        theme_classic() +
+        theme(legend.position = "none",
+              plot.title = element_text(hjust = 0.5),
+              plot.subtitle = element_text(hjust = 0.5,
+                                           size = 8,
+                                           face = "italic"),
+              plot.background = element_rect(fill = "#000027"),
+              panel.background = element_rect(fill = "#000027"),
+              axis.text = element_text(colour = "#b3b3b3"),
+              axis.line = element_blank(),
+              text = element_text(colour = "#b3b3b3")) +
+        scale_x_discrete(limits = c("Yes", "No")) + 
+        ggtitle("Confusion Matrix",
+                subtitle = "Predicted Classes using Youden Index Threshold")
+
+saveRDS(conf.mat, "../graphs/conf_mat.rds")
+```
+
+
+
+
+
+
+
+

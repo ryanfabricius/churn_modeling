@@ -1,15 +1,16 @@
 ---
 title: "Churn Modeling"
-author: "Ryan Fabricius"
-date: "4/30/2020"
-output: html_document
+output: github_document
 ---
-
+Ryan Fabricius  
+Independent Project  
+5/2/2020  
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
-Churn rate is defined as the proportion of a customer base to leave their service provider in a specified period of time. What if churn rate could be predicted by predicting wether each individual memeber will churn? Two business aspects come to mind when thinking about the impact of this model. Finance could use the model to increase the accuracy of their revenue forcasts, and initiatives could be made to these members to increase retainment.
+### Exploratory Analysis  
+***
+Churn rate is defined as the proportion of a customer base to leave their service provider in a specified period of time. What if churn rate could be calculated by predicting wether each individual memeber will churn? Two business aspects come to mind when thinking about the impact of this model. Finance could use the model to increase the accuracy of their revenue forecasts, and initiatives could be made to these members to increase retainment.
 
 The [Churn Modeling Dataset](https://www.kaggle.com/shrutimechlearn/churn-modelling) was downloaded from Kaggle, containing 14 columns and 9750 rows.
 
@@ -31,31 +32,32 @@ churn.raw <- read_csv("data/Churn_Modelling.csv") %>%
 # Display data
 str(churn.raw)
 ```
-
-When doealing with binary classification, it is important to analzye the class proportions. Machine learning techniques tend provide better results when the classes are balanced.
-
-```{r, echo=FALSE}
+<br>
+Churn is represented by the "Exited" column in the dataset. Exited is a binary outcome, dummy coded as 1 if the member churned, or 0 if the memeber stayed with the bank. When dealing with binary classification, it is important to analzye the class proportions. Machine learning techniques tend to provide better results when classes are balanced.
+<br><br><br>
+```{r, echo=FALSE, fig.align='center'}
 # Read in imbalance bar graph
 read_rds("./graphs/imbalance_bar.rds")
 ```
-
-With a churn rate of approximately 20%, there is a moderate class imbalance problem. Exploring the sepeartion between pairs of the dimensions can provide helpful insights on the data.
-
-```{r, echo=FALSE}
+<br><br>
+With a churn rate of approximately 20%, there is a moderate class imbalance issue. Exploring the seperation between pairs of dimensions can provide helpful insights on the data. Visually, age makes classifying easier, and there is little to no seperation when age is not involved.
+<br><br><br>
+```{r, echo=FALSE, fig.align='center', fig.width=12, fig.height=8}
 # Read in imbalance grid
 read_rds("./graphs/imbalance_grid.rds")
 ```
-
-Different pairs of dimensions have varying degrees of seperation. Age seems to make classifying easier, as there seems to be little to no seperation between pairs of dimensions not containing age.
-
-Utlizing the themis package, techniques that will be used to try and "balance" the data include:  
+ 
+### Setting up the Models   
+***  
+Utlizing the themis package, class imbalance techniques used include:  
+  
 * SMOTE (Synthetic Minority Over-sampling Technique)  
 * ROSE (Generation of syntheic data by Randomly Over Sampling Examples)  
-* Up-Sampling (Random minority over-sampling with replacement)
+* Up-Sampling (Random minority over-sampling with replacement)  
 * None (control)  
 
-Altering the last step step of the recipe will take care of this.
-
+The themis step functions used to deal with class imbalance are the last step of each recipe.
+<br><br>
 ```{r, eval=FALSE}
 # Define the recipe for Up-Sampling
 churn.recipe.up <- recipe(Exited ~ ., 
@@ -64,7 +66,7 @@ churn.recipe.up <- recipe(Exited ~ .,
   # Remove surname and rownumber
   step_rm(one_of("RowNumber", "Surname")) %>% 
   
-  # Carry's non-predictors through model
+  # Carry non-predictors through model
   update_role(CustomerId, new_role = "Helper") %>% 
   
   # Convert outcome to nominal
@@ -85,15 +87,16 @@ churn.recipe.up <- recipe(Exited ~ .,
   # Deal with class imbalance
   step_upsample(Exited) # Up-Sampling step function using themis package
 ```
-
+<br>
 The effect of the class imbalance techniques will be analyzed using four different classification methods:  
-* glmnet  
-* random forest using the ranger package
-* Extreme Gradient Boosting using XGBoost
-* Support Vector Machines utlizing the radial basis function kernel
-
-Each classification method will be tuned using 10-fold cross validation created on the training set. This was performed through the tune and dials package in the tidymodels family.  
-
+   
+* Glmnet  
+* Random forest using the ranger package  
+* Extreme gradient boosting using XGBoost  
+* Support vector machines utlizing the radial basis function kernel  
+   
+Each classification method will be tuned using 10-fold cross validation. Tuning was performed through the tune and dials package in the tidymodels family.  
+<br>
 ```{r, eval=FALSE}
 # List of parsnip models
 
@@ -160,15 +163,78 @@ svm.grid <- svm.mod %>%
   grid_max_entropy(size = 50)
 ```
 
+### Evaluating Tuned Models   
+***   
 Models were evaluated using the AUC (Area Under the ROC Curve). Accuracy is misleading when classes are imbalanced. A method of always classifying a member as "not churning" would lead you to 80% accuracy. 
-
-```{r, echo=FALSE}
+<br><br>
+```{r, echo=FALSE, fig.align='center'}
 # Read in metric graph
 read_rds("./graphs/cv_graph.rds")
 ```
+<br><br>
+XGBoost had the highest AUC by a narrow margin. Other than SMOTE, the class imbalance technqiues used do not show much variation from each other. Ultimately, up-sampling was chosen from the remaining three, as it was the simplest technique that also dealt with the class imbalance issue.
 
-XGBoost had the highest AUC by a narrow margin. Other than SMOTE, the class imbalance technqiues used do not show much variation from each other. Usually, it would then just be a standard practice to use the simplest model, of the indistinguishable models. However, the the AUC did drop slightly for the svm with no class imbalance technqiue. For this reason, Up-Sampling was chosen for the final model build of XGBoost.
+### Fitting the Final Model   
+***   
+The final step of the process is to evaluate the XGBoost model, trained with up-sampling, on the test set. This is done by finalizing the workflow with the tuning parameters from the model with the highest cross-validated AUC. The predicted probabilities outputed from the model will be used to plot the ROC Curve.  
+<br>
+```{r, eval=FALSE}
+# Save parameters of best XGBoost model
+xgb.up.params <- xgb.wrkflw.tuned.up %>% 
+  select_best(metric = "roc_auc")
 
+# Finalize workflow with saved parameters
+xgb.wrkflw.finalized <- xgb.wrkflw.up %>% 
+  finalize_workflow(xgb.up.params)
+
+# Fit model on training and evaluate on test set
+xgb.final.fit <- xgb.wrkflw.finalized %>% 
+  last_fit(churn.split)
+```
+
+```{r, eval=FALSE}
+# Create ROC curve
+xgb.roc.curve <- xgb.final.fit %>%
+        collect_predictions() %>% 
+        dplyr::select(.pred_Yes, Exited) %>% 
+        ggplot(., aes(d = Exited, m = .pred_Yes, color = "#cc0000")) +
+        geom_roc(cutoffs.at = .564,
+                 pointsize = 0.65,
+                 labelround = 3, 
+                 color = "#3399ff",
+                 linealpha = 0.50) +
+        theme_classic() +
+        theme(legend.position = "bottom",
+              legend.background = element_rect(fill = "#000027",
+                                               colour = "#b3b3b3"),
+              panel.background = element_rect(fill = "#000027"),
+              plot.background = element_rect(fill = "#000027"),
+              text = element_text(colour = "#b3b3b3"),
+              axis.text = element_text(colour = "#b3b3b3"),
+              axis.line = element_blank(),
+              plot.title = element_text(hjust = 0.5),
+              plot.subtitle = element_text(hjust = 0.5,
+                                           size = 8,
+                                           face = "italic")) +
+        xlab("1 - Specificity") +
+        ylab("Sensitivity") +
+        ggtitle("ROC Curve", 
+                subtitle = "Optimal Threshold defined by Youden Index")
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+read_rds("./graphs/roc_curve.rds")
+```
+<br><br>  
+The Youden Index was used to calculate the optimal cutoff threshold for the probabilities. The Youden Index was chosen based off the finance scenario explained earlier, of trying to more accurately forecast revenue. Let's say the team that deals with retainment wanted to use this model, then sensitivity should be increased at the expense of specificity. Predicted classes were then created using the threshold of .564, and easily visualized with a confusion matrix.
+<br><br>
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+read_rds("./graphs/conf_mat.rds")
+```
+
+### Conclusion
+***
+It was interesting none of the over-sampling techniques used were able to seperate themsleves from the original ratio. There is always room for improvement. The ratio used by the imbalance techniques could be tuned, and other over-sampling and under-sampling methods could be attempted. Of course, there is always the option of ensembling the classification methods using a Superlearner. If you have any questions, comments, or advice, please feel welcome to reach out.
 
 
 

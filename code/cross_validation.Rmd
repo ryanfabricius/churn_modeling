@@ -336,10 +336,10 @@ cv.graph <- model.metrics %>%
   geom_line(aes(group = class.imbalance)) +
   theme_classic() +
   theme(legend.position = "bottom",
-        legend.background = element_rect(fill = "#000015",
+        legend.background = element_rect(fill = "#000027",
                                          colour = "#b3b3b3"),
-        panel.background = element_rect(fill = "#000015"),
-        plot.background = element_rect(fill = "#000015"),
+        panel.background = element_rect(fill = "#000027"),
+        plot.background = element_rect(fill = "#000027"),
         text = element_text(colour = "#b3b3b3"),
         axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
@@ -354,6 +354,13 @@ cv.graph <- model.metrics %>%
 saveRDS(cv.graph, "../graphs/cv_graph.rds")
 ```
 
+```{r}
+# Save params
+xgb.up.params <- xgb.wrkflw.tuned.up %>% 
+  select_best(metric = "roc_auc")
+
+saveRDS(xgb.up.params, "../models/xgb_up_params.rds")
+```
 
 
 

@@ -18,6 +18,7 @@ library(readr)
 library(ggplot2)
 library(cowplot)
 library(gridExtra)
+library(tidyr)
 ```
 
 ```{r}
@@ -51,15 +52,17 @@ imbalance.bar <- churn.training %>%
                  width = 0.5) +
         theme_classic() +
         theme(legend.position = "none",
-              panel.background = element_rect(fill = "#000015"),
-              plot.background = element_rect(fill = "#000015"),
+              panel.background = element_rect(fill = "#000027"),
+              plot.background = element_rect(fill = "#000027"),
               text = element_text(colour = "#b3b3b3"),
               axis.text = element_text(colour = "#b3b3b3"),
               axis.line = element_blank(),
               plot.title = element_text(hjust = 0.5)) +
         scale_y_continuous(labels = scales::comma) +
-        scale_fill_manual(values = c("#ff6600", "#3399ff")) +
+        scale_fill_manual(values = c("#3399ff", "#ff6600")) +
         ggtitle(label = "Moderate Class Imbalance")
+
+imbalance.bar
 ```
 
 ```{r, include=FALSE}
@@ -80,10 +83,10 @@ g1 <- ggplot(class.seperation, aes(x = Age,
                                    alpha = .05)) +
   geom_point() +
   theme_classic() +
-  theme(legend.background = element_rect(fill = "#000015"),
+  theme(legend.background = element_rect(fill = "#000027"),
         legend.position = "top",
-        panel.background = element_rect(fill = "#000015"),
-        plot.background = element_rect(fill = "#000015"),
+        panel.background = element_rect(fill = "#000027"),
+        plot.background = element_rect(fill = "#000027"),
         text = element_text(colour = "#b3b3b3"),
         axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
@@ -108,8 +111,8 @@ g2 <- ggplot(class.seperation, aes(x = Age,
   geom_point() +
   theme_classic() +
   theme(legend.position = "none",
-        panel.background = element_rect(fill = "#000015"),
-        plot.background = element_rect(fill = "#000015"),
+        panel.background = element_rect(fill = "#000027"),
+        plot.background = element_rect(fill = "#000027"),
         text = element_text(colour = "#b3b3b3"),
         axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
@@ -127,8 +130,8 @@ g3 <- ggplot(class.seperation, aes(x = Age,
   geom_point() +
   theme_classic() +
   theme(legend.position = "none",
-        panel.background = element_rect(fill = "#000015"),
-        plot.background = element_rect(fill = "#000015"),
+        panel.background = element_rect(fill = "#000027"),
+        plot.background = element_rect(fill = "#000027"),
         text = element_text(colour = "#b3b3b3"),
         axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
@@ -146,15 +149,15 @@ g4 <- ggplot(class.seperation, aes(x = CreditScore,
   geom_point() +
   theme_classic() +
   theme(legend.position = "none",
-        panel.background = element_rect(fill = "#000015"),
-        plot.background = element_rect(fill = "#000015"),
+        panel.background = element_rect(fill = "#000027"),
+        plot.background = element_rect(fill = "#000027"),
         text = element_text(colour = "#b3b3b3"),
         axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
         plot.title = element_text(hjust = 0.5)) +
   scale_y_continuous(labels = scales::comma) +
   scale_color_manual(values = c("#ff6600", "#3399ff")) +
-  ggtitle(label = "Credit Score vs. Balance") +
+  ggtitle(label = "Balance vs. Credit Score") +
   guides(alpha = FALSE)
 
 # Create grid for graphs
@@ -166,7 +169,7 @@ grid <- grid.arrange(g1, g2, g3, g4, legend,
                      heights = c(2.5, 2.5, .5))
 
 grid2 <- cowplot::ggdraw(grid) +
-  theme(plot.background = element_rect(fill = "#000015"))
+  theme(plot.background = element_rect(fill = "#000027"))
 ```
 
 ```{r, fig.width=12, fig.height=8, fig.align="center"}

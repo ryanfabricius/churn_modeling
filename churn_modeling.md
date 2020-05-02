@@ -1,0 +1,293 @@
+Churn Modeling
+================
+
+Ryan Fabricius  
+Independent Project  
+5/2/2020
+
+### Exploratory Analysis
+
+-----
+
+Churn rate is defined as the proportion of a customer base to leave
+their service provider in a specified period of time. What if churn rate
+could be calculated by predicting wether each individual memeber will
+churn? Two business aspects come to mind when thinking about the impact
+of this model. Finance could use the model to increase the accuracy of
+their revenue forecasts, and initiatives could be made to these members
+to increase retainment.
+
+The [Churn Modeling
+Dataset](https://www.kaggle.com/shrutimechlearn/churn-modelling) was
+downloaded from Kaggle, containing 14 columns and 9750
+    rows.
+
+    ## Classes 'spec_tbl_df', 'tbl_df', 'tbl' and 'data.frame': 9749 obs. of  14 variables:
+    ##  $ RowNumber      : num  1 2 3 4 5 6 7 8 9 10 ...
+    ##  $ CustomerId     : num  15634602 15647311 15619304 15701354 15737888 ...
+    ##  $ Surname        : chr  "Hargrave" "Hill" "Onio" "Boni" ...
+    ##  $ CreditScore    : num  619 608 502 699 850 645 822 376 501 684 ...
+    ##  $ Geography      : chr  "France" "Spain" "France" "France" ...
+    ##  $ Gender         : chr  "Female" "Female" "Female" "Female" ...
+    ##  $ Age            : num  42 41 42 39 43 44 50 29 44 27 ...
+    ##  $ Tenure         : num  2 1 8 1 2 8 7 4 4 2 ...
+    ##  $ Balance        : num  0 83808 159661 0 125511 ...
+    ##  $ NumOfProducts  : num  1 1 3 2 1 2 2 4 2 1 ...
+    ##  $ HasCrCard      : num  1 0 1 0 1 1 1 1 0 1 ...
+    ##  $ IsActiveMember : num  1 1 0 0 1 0 1 0 1 1 ...
+    ##  $ EstimatedSalary: num  101349 112543 113932 93827 79084 ...
+    ##  $ Exited         : num  1 0 1 0 0 1 0 1 0 0 ...
+    ##  - attr(*, "problems")=Classes 'tbl_df', 'tbl' and 'data.frame': 1 obs. of  5 variables:
+    ##   ..$ row     : int 9750
+    ##   ..$ col     : chr NA
+    ##   ..$ expected: chr "14 columns"
+    ##   ..$ actual  : chr "12 columns"
+    ##   ..$ file    : chr "'data/Churn_Modelling.csv'"
+    ##  - attr(*, "spec")=
+    ##   .. cols(
+    ##   ..   RowNumber = col_double(),
+    ##   ..   CustomerId = col_double(),
+    ##   ..   Surname = col_character(),
+    ##   ..   CreditScore = col_double(),
+    ##   ..   Geography = col_character(),
+    ##   ..   Gender = col_character(),
+    ##   ..   Age = col_double(),
+    ##   ..   Tenure = col_double(),
+    ##   ..   Balance = col_double(),
+    ##   ..   NumOfProducts = col_double(),
+    ##   ..   HasCrCard = col_double(),
+    ##   ..   IsActiveMember = col_double(),
+    ##   ..   EstimatedSalary = col_double(),
+    ##   ..   Exited = col_double()
+    ##   .. )
+
+<br> Churn is represented by the “Exited” column in the dataset. Exited
+is a binary outcome, dummy coded as 1 if the member churned, or 0 if the
+memeber stayed with the bank. When dealing with binary classification,
+it is important to analzye the class proportions. Machine learning
+techniques tend to provide better results when classes are balanced.
+<br><br><br>
+<img src="churn_modeling_files/figure-gfm/unnamed-chunk-3-1.png" style="display: block; margin: auto;" />
+<br><br> With a churn rate of approximately 20%, there is a moderate
+class imbalance issue. Exploring the seperation between pairs of
+dimensions can provide helpful insights on the data. Visually, age makes
+classifying easier, and there is little to no seperation when age is not
+involved. <br><br><br>
+<img src="churn_modeling_files/figure-gfm/unnamed-chunk-4-1.png" style="display: block; margin: auto;" />
+
+### Setting up the Models
+
+-----
+
+Utlizing the themis package, class imbalance techniques used include:
+
+  - SMOTE (Synthetic Minority Over-sampling Technique)  
+  - ROSE (Generation of syntheic data by Randomly Over Sampling
+    Examples)  
+  - Up-Sampling (Random minority over-sampling with replacement)  
+  - None (control)
+
+The themis step functions used to deal with class imbalance are the last
+step of each recipe. <br><br>
+
+``` r
+# Define the recipe for Up-Sampling
+churn.recipe.up <- recipe(Exited ~ ., 
+                          data = head(churn.training)) %>% 
+  
+  # Remove surname and rownumber
+  step_rm(one_of("RowNumber", "Surname")) %>% 
+  
+  # Carry non-predictors through model
+  update_role(CustomerId, new_role = "Helper") %>% 
+  
+  # Convert outcome to nominal
+  step_num2factor(all_outcomes(), 
+                  levels = c("No", "Yes"),
+                  transform = function(x) {x + 1}) %>% 
+  
+  # Scale and Center Data
+  step_normalize(all_numeric(), -has_role(match = "Helper")) %>% 
+  
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal(), -all_outcomes()) %>% 
+  
+  # Remove correlated and near zero predictors
+  step_corr(all_numeric(), -has_role("Helper")) %>% 
+  step_nzv(all_predictors()) %>% 
+  
+  # Deal with class imbalance
+  step_upsample(Exited) # Up-Sampling step function using themis package
+```
+
+<br> The effect of the class imbalance techniques will be analyzed using
+four different classification methods:
+
+  - Glmnet  
+  - Random forest using the ranger package  
+  - Extreme gradient boosting using XGBoost  
+  - Support vector machines utlizing the radial basis function kernel
+
+Each classification method will be tuned using 10-fold cross validation.
+Tuning was performed through the tune and dials package in the
+tidymodels family.  
+<br>
+
+``` r
+# List of parsnip models
+
+# glmnet
+glmnet.mod <- logistic_reg(
+      mode = "classification",
+      penalty = tune(),
+      mixture = tune()) %>% 
+  set_engine("glmnet")
+
+# random forest 
+rf.mod <- rand_forest(
+      mode = "classification",
+      mtry = tune(),
+      min_n = tune(),
+      trees = tune()) %>% 
+  set_engine("ranger")
+
+# xgboost model
+xgb.mod <- boost_tree(
+      mode = "classification",
+      trees = tune(),
+      mtry = tune(),
+      min_n = tune(),
+      learn_rate = tune(),
+      loss_reduction = tune(),
+      sample_size = tune()) %>% 
+  set_engine("xgboost")
+
+# svm model
+svm.mod <- svm_rbf(
+      mode = "classification",
+      cost = tune(),
+      rbf_sigma = tune(),
+      margin = tune()) %>%
+  set_engine("kernlab")
+```
+
+``` r
+# Hyperparameter Grids
+
+# glmnet
+glmnet.grid <- glmnet.mod %>% 
+      parameters() %>% 
+      grid_max_entropy(size = 50)
+
+# random forest
+rf.grid <- rf.mod %>% 
+  parameters() %>% 
+  update(mtry = mtry(c(1L, 5L)),
+         trees = trees(c(200L, 500L)))%>% 
+  grid_max_entropy(size = 50)
+
+# xgboost
+xgb.grid <- xgb.mod %>% 
+  parameters() %>% 
+  update(mtry = mtry(c(1L, 5L)),
+         trees = trees(c(200L, 500L))) %>% 
+  grid_max_entropy(size = 50)
+
+# svm
+svm.grid <- svm.mod %>% 
+  parameters() %>% 
+  grid_max_entropy(size = 50)
+```
+
+### Evaluating Tuned Models
+
+-----
+
+Models were evaluated using the AUC (Area Under the ROC Curve). Accuracy
+is misleading when classes are imbalanced. A method of always
+classifying a member as “not churning” would lead you to 80% accuracy.
+<br><br>
+<img src="churn_modeling_files/figure-gfm/unnamed-chunk-8-1.png" style="display: block; margin: auto;" />
+<br><br> XGBoost had the highest AUC by a narrow margin. Other than
+SMOTE, the class imbalance technqiues used do not show much variation
+from each other. Ultimately, up-sampling was chosen from the remaining
+three, as it was the simplest technique that also dealt with the class
+imbalance issue.
+
+### Fitting the Final Model
+
+-----
+
+The final step of the process is to evaluate the XGBoost model, trained
+with up-sampling, on the test set. This is done by finalizing the
+workflow with the tuning parameters from the model with the highest
+cross-validated AUC. The predicted probabilities outputed from the model
+will be used to plot the ROC Curve.  
+<br>
+
+``` r
+# Save parameters of best XGBoost model
+xgb.up.params <- xgb.wrkflw.tuned.up %>% 
+  select_best(metric = "roc_auc")
+
+# Finalize workflow with saved parameters
+xgb.wrkflw.finalized <- xgb.wrkflw.up %>% 
+  finalize_workflow(xgb.up.params)
+
+# Fit model on training and evaluate on test set
+xgb.final.fit <- xgb.wrkflw.finalized %>% 
+  last_fit(churn.split)
+```
+
+``` r
+# Create ROC curve
+xgb.roc.curve <- xgb.final.fit %>%
+        collect_predictions() %>% 
+        dplyr::select(.pred_Yes, Exited) %>% 
+        ggplot(., aes(d = Exited, m = .pred_Yes, color = "#cc0000")) +
+        geom_roc(cutoffs.at = .564,
+                 pointsize = 0.65,
+                 labelround = 3, 
+                 color = "#3399ff",
+                 linealpha = 0.50) +
+        theme_classic() +
+        theme(legend.position = "bottom",
+              legend.background = element_rect(fill = "#000027",
+                                               colour = "#b3b3b3"),
+              panel.background = element_rect(fill = "#000027"),
+              plot.background = element_rect(fill = "#000027"),
+              text = element_text(colour = "#b3b3b3"),
+              axis.text = element_text(colour = "#b3b3b3"),
+              axis.line = element_blank(),
+              plot.title = element_text(hjust = 0.5),
+              plot.subtitle = element_text(hjust = 0.5,
+                                           size = 8,
+                                           face = "italic")) +
+        xlab("1 - Specificity") +
+        ylab("Sensitivity") +
+        ggtitle("ROC Curve", 
+                subtitle = "Optimal Threshold defined by Youden Index")
+```
+
+<img src="churn_modeling_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
+<br><br>  
+The Youden Index was used to calculate the optimal cutoff threshold for
+the probabilities. The Youden Index was chosen based off the finance
+scenario explained earlier, of trying to more accurately forecast
+revenue. Let’s say the team that deals with retainment wanted to use
+this model, then sensitivity should be increased at the expense of
+specificity. Predicted classes were then created using the threshold of
+.564, and easily visualized with a confusion matrix. <br><br>
+<img src="churn_modeling_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
+
+### Conclusion
+
+-----
+
+It was interesting none of the over-sampling techniques used were able
+to seperate themsleves from the original ratio. There is always room for
+improvement. The ratio used by the imbalance techniques could be tuned,
+and other over-sampling and under-sampling methods could be attempted.
+Of course, there is always the option of ensembling the classification
+methods using a Superlearner. If you have any questions, comments, or
+advice, please feel welcome to reach out.

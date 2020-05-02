@@ -20,7 +20,7 @@ library(readr)
 
 ```{r, message=FALSE, warning=FALSE}
 # Read in data
-churn.raw <- read_csv("data/Churn_Modelling.csv") %>%
+churn.raw <- read_csv("../data/Churn_Modelling.csv") %>%
   
   # Eliminating the one and only row with NA values which includes outcome
   dplyr::filter(complete.cases(.))
@@ -41,6 +41,7 @@ churn.cv <- vfold_cv(churn.training, v = 10)
 
 ```{r, eval=FALSE}
 # Save data
+saveRDS(churn.split, file = "../data/churn_split.rds")
 saveRDS(churn.training, file = "../data/churn_training.rds")
 saveRDS(churn.testing, file = "../data/churn_testing.rds")
 saveRDS(churn.cv, file = "../data/churn_cv.rds")
