@@ -35,7 +35,7 @@ str(churn.raw)
 <br>
 Churn is represented by the "Exited" column in the dataset. Exited is a binary outcome, dummy coded as 1 if the member churned, or 0 if the memeber stayed with the bank. When dealing with binary classification, it is important to analzye the class proportions. Machine learning techniques tend to provide better results when classes are balanced.
 <br><br><br>
-```{r, echo=FALSE, fig.align='center'}
+```{r, echo=FALSE, fig.align='center', fig.width=12}
 # Read in imbalance bar graph
 read_rds("./graphs/imbalance_bar.rds")
 ```
@@ -167,7 +167,7 @@ svm.grid <- svm.mod %>%
 ***   
 Models were evaluated using the AUC (Area Under the ROC Curve). Accuracy is misleading when classes are imbalanced. A method of always classifying a member as "not churning" would lead you to 80% accuracy. 
 <br><br>
-```{r, echo=FALSE, fig.align='center'}
+```{r, echo=FALSE, fig.align='center', fig.width=12}
 # Read in metric graph
 read_rds("./graphs/cv_graph.rds")
 ```
@@ -222,13 +222,13 @@ xgb.roc.curve <- xgb.final.fit %>%
                 subtitle = "Optimal Threshold defined by Youden Index")
 ```
 
-```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center',fig.width=12}
 read_rds("./graphs/roc_curve.rds")
 ```
 <br><br>  
 The Youden Index was used to calculate the optimal cutoff threshold for the probabilities. The Youden Index was chosen based off the finance scenario explained earlier, of trying to more accurately forecast revenue. Let's say the team that deals with retainment wanted to use this model, then sensitivity should be increased at the expense of specificity. Predicted classes were then created using the threshold of .564, and easily visualized with a confusion matrix.
 <br><br>
-```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
+```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center', fig.width=12}
 read_rds("./graphs/conf_mat.rds")
 ```
 
