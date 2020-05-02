@@ -247,6 +247,7 @@ xgb.roc.curve <- xgb.final.fit %>%
         ggplot(., aes(d = Exited, m = .pred_Yes, color = "#cc0000")) +
         geom_roc(cutoffs.at = .564,
                  pointsize = 0.65,
+                 labelsize = 8,
                  labelround = 3, 
                  color = "#3399ff",
                  linealpha = 0.50) +
@@ -256,12 +257,15 @@ xgb.roc.curve <- xgb.final.fit %>%
                                                colour = "#b3b3b3"),
               panel.background = element_rect(fill = "#000027"),
               plot.background = element_rect(fill = "#000027"),
-              text = element_text(colour = "#b3b3b3"),
-              axis.text = element_text(colour = "#b3b3b3"),
+              text = element_text(colour = "#b3b3b3", 
+                                  size = 16),
+              axis.text = element_text(colour = "#b3b3b3",
+                                       size = 16),
               axis.line = element_blank(),
-              plot.title = element_text(hjust = 0.5),
+              plot.title = element_text(hjust = 0.5,
+                                        size = 16),
               plot.subtitle = element_text(hjust = 0.5,
-                                           size = 8,
+                                           size = 12,
                                            face = "italic")) +
         xlab("1 - Specificity") +
         ylab("Sensitivity") +
@@ -277,7 +281,7 @@ scenario explained earlier, of trying to more accurately forecast
 revenue. Let’s say the team that deals with retainment wanted to use
 this model, then sensitivity should be increased at the expense of
 specificity. Predicted classes were then created using the threshold of
-.564, and easily visualized with a confusion matrix. <br><br>
+.556, and easily visualized with a confusion matrix. <br><br>
 <img src="churn_modeling_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
 ### Conclusion

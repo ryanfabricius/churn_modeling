@@ -54,10 +54,13 @@ imbalance.bar <- churn.training %>%
         theme(legend.position = "none",
               panel.background = element_rect(fill = "#000027"),
               plot.background = element_rect(fill = "#000027"),
-              text = element_text(colour = "#b3b3b3"),
-              axis.text = element_text(colour = "#b3b3b3"),
+              text = element_text(colour = "#b3b3b3", 
+                                  size = 16),
+              axis.text = element_text(colour = "#b3b3b3",
+                                       size = 16),
               axis.line = element_blank(),
-              plot.title = element_text(hjust = 0.5)) +
+              plot.title = element_text(hjust = 0.5,
+                                        size = 16)) +
         scale_y_continuous(labels = scales::comma) +
         scale_fill_manual(values = c("#3399ff", "#ff6600")) +
         ggtitle(label = "Moderate Class Imbalance")
