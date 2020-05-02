@@ -18,6 +18,8 @@ library(dials)
 library(tune)
 library(workflows)
 library(readr)
+library(xgboost)
+library(kernlab)
 ```
 
 ```{r}
@@ -37,12 +39,16 @@ churn.recipe.up <- read_rds("../models/churn_recipe_up_sampling.rds")
 # Load models
 glmnet.mod <- read_rds("../models/glmnet_mod.rds")
 rf.mod <- read_rds("../models/rf_mod.rds")
+xgb.mod <- read_rds("../models/xgb_mod.rds")
+svm.mod <- read_rds("../models/svm_mod.rds")
 ```
 
 ```{r}
 # Load tuning grids
 glmnet.grid <- read_rds("../models/glmnet_grid.rds")
 rf.grid <- read_rds("../models/rf_grid.rds")
+xgb.grid <- read_rds("../models/xgb_grid.rds")
+svm.grid <- read_rds("../models/svm_grid.rds")
 ```
 
 ```{r}
@@ -85,13 +91,52 @@ rf.wrkflw.rose <- rf.wrkflw.no %>%
 # Up-sampling
 rf.wrkflw.up <- rf.wrkflw.no %>% 
   update_recipe(churn.recipe.up)
+
+######## xgb workflows ########
+
+# No class imbalance method
+xgb.wrkflw.no <- workflow() %>% 
+  add_recipe(churn.recipe.no) %>% 
+  add_model(xgb.mod)
+
+# Smote
+xgb.wrkflw.sm <- xgb.wrkflw.no %>% 
+  update_recipe(churn.recipe.sm)
+
+# Rose
+xgb.wrkflw.rose <- xgb.wrkflw.no %>% 
+  update_recipe(churn.recipe.rose)
+
+# Up-sampling
+xgb.wrkflw.up <- xgb.wrkflw.no %>% 
+  update_recipe(churn.recipe.up)
+
+######## svm workflows ########
+
+# No class imbalance method
+svm.wrkflw.no <- workflow() %>% 
+  add_recipe(churn.recipe.no) %>% 
+  add_model(svm.mod)
+
+# Smote
+svm.wrkflw.sm <- svm.wrkflw.no %>% 
+  update_recipe(churn.recipe.sm)
+
+# Rose
+svm.wrkflw.rose <- svm.wrkflw.no %>% 
+  update_recipe(churn.recipe.rose)
+
+# Up-sampling
+svm.wrkflw.up <- svm.wrkflw.no %>% 
+  update_recipe(churn.recipe.up)
 ```
 
 Model tuning is split into two chunks due to run time.
 
 ```{r}
-# Tune models over cv sets
+# Tune models over cv sets for glmnet and rf
 set.seed(12)
+
 # Glmnet Models
 glmnet.wrkflw.tuned.no <- glmnet.wrkflw.no %>% 
   tune_grid(resamples = churn.cv,
@@ -155,77 +200,159 @@ rf.wrkflw.tuned.up <- rf.wrkflw.up %>%
 ```
 
 ```{r}
+# Tune models over cv sets for xgboost and svm
+set.seed(12)
+
+# XGB Models
+xgb.wrkflw.tuned.no <- xgb.wrkflw.no %>% 
+  tune_grid(resamples = churn.cv,
+            grid = xgb.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+xgb.wrkflw.tuned.sm <- xgb.wrkflw.sm %>% 
+  tune_grid(resamples = churn.cv,
+            grid = xgb.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+xgb.wrkflw.tuned.rose <- xgb.wrkflw.rose %>% 
+  tune_grid(resamples = churn.cv,
+            grid = xgb.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+xgb.wrkflw.tuned.up <- xgb.wrkflw.up %>% 
+  tune_grid(resamples = churn.cv,
+            grid = xgb.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+# SVM Models
+svm.wrkflw.tuned.no <- svm.wrkflw.no %>% 
+  tune_grid(resamples = churn.cv,
+            grid = svm.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+svm.wrkflw.tuned.sm <- svm.wrkflw.sm %>% 
+  tune_grid(resamples = churn.cv,
+            grid = svm.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+svm.wrkflw.tuned.rose <- svm.wrkflw.rose %>% 
+  tune_grid(resamples = churn.cv,
+            grid = svm.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+
+svm.wrkflw.tuned.up <- svm.wrkflw.up %>% 
+  tune_grid(resamples = churn.cv,
+            grid = svm.grid,
+            metrics = metric_set(accuracy, roc_auc),
+            control = control_grid(verbose = TRUE))
+```
+
+```{r}
+# saveRDS(xgb.wrkflw.tuned.no, "../models/xgb_wrkflw_tuned_none.rds")
+# saveRDS(xgb.wrkflw.tuned.sm, "../models/xgb_wrkflw_tuned_smote.rds")
+# saveRDS(xgb.wrkflw.tuned.rose, "../models/xgb_wrkflw_tuned_rose.rds")
+# saveRDS(xgb.wrkflw.tuned.up, "../models/xbg_wrkflw_tuned_up.rds")
+# saveRDS(svm.wrkflw.tuned.no, "../models/svm_wrkflw_tuned_none.rds")
+# saveRDS(svm.wrkflw.tuned.sm, "../models/svm_wrkflw_tuned_smote.rds")
+# saveRDS(svm.wrkflw.tuned.rose, "../models/svm_wrkflw_tuned_rose.rds")
+# saveRDS(svm.wrkflw.tuned.up, "../models/svm_wrkflw_tuned_up.rds")
+```
+
+```{r}
+rf.wrkflw.tuned.up %>% show_best(metric = "roc_auc")
+```
+
+
+```{r}
+# Table of AUC for every classification X imbalance technique combination
+
 # Create list of models
-model.list.set1 <- tibble(glmnet.wrkflw.tuned.no,
+model.list<- tibble(glmnet.wrkflw.tuned.no,
                    glmnet.wrkflw.tuned.sm,
                    glmnet.wrkflw.tuned.rose,
                    glmnet.wrkflw.tuned.up,
                    rf.wrkflw.tuned.no,
                    rf.wrkflw.tuned.sm,
                    rf.wrkflw.tuned.rose,
-                   rf.wrkflw.tuned.up
+                   rf.wrkflw.tuned.up,
+                   xgb.wrkflw.tuned.no,
+                   xgb.wrkflw.tuned.sm,
+                   xgb.wrkflw.tuned.rose,
+                   xgb.wrkflw.tuned.up,
+                   svm.wrkflw.tuned.no,
+                   svm.wrkflw.tuned.sm,
+                   svm.wrkflw.tuned.rose,
+                   svm.wrkflw.tuned.up
                    )
 
 # Create metric tibble for models
-model.metrics.set1.auc <- tibble(models = c(map(.x = model.list.set1,
+model.metrics.auc <- tibble(models = c(map(.x = model.list,
                                               ~show_best(.x, metric = "roc_auc", 1)))) %>% 
   unnest(models) %>% 
-  mutate(model = c("glmnet",
-                   "glmnet",
-                   "glmnet",
-                   "glmnet",
-                   "Random Forest",
-                   "Random Forest",
-                   "Random Forest",
-                   "Random Forest"),
-         class.imbalance = c("None",
-                             "Smote",
-                             "Rose",
-                             "Up-sampling",
-                             "None",
-                             "Smote",
-                             "Rose",
-                             "Up-sampling")) %>% 
-  dplyr::select(one_of(".metric",
-                       ".estimator",
-                       "mean",
-                       "std_err",
-                       "model",
-                       "class.imbalance"))
+  mutate(model = c(rep("glment", 4),
+                   rep("rf", 4),
+                   rep("xgboost", 4),
+                   rep("svm", 4)),
+         class.imbalance = c(
+           rep(c("None",
+                 "Smote",
+                 "Rose",
+                 "Up-sampling"), 4)))
 
-model.metrics.set1.accuracy <- tibble(models = c(map(.x = model.list.set1,
+model.metrics.accuracy <- tibble(models = c(map(.x = model.list,
                                               ~show_best(.x, metric = "accuracy", 1)))) %>% 
   unnest(models) %>% 
-  mutate(model = c("glmnet",
-                   "glmnet",
-                   "glmnet",
-                   "glmnet",
-                   "Random Forest",
-                   "Random Forest",
-                   "Random Forest",
-                   "Random Forest"),
-         class.imbalance = c("None",
-                             "Smote",
-                             "Rose",
-                             "Up-sampling",
-                             "None",
-                             "Smote",
-                             "Rose",
-                             "Up-sampling")) %>% 
-  dplyr::select(one_of(".metric",
-                       ".estimator",
-                       "mean",
-                       "std_err",
-                       "model",
-                       "class.imbalance"))
+  mutate(model = c(rep("glment", 4),
+                   rep("rf", 4),
+                   rep("xgboost", 4),
+                   rep("svm", 4)),
+         class.imbalance = c(
+           rep(c("None",
+                 "Smote",
+                 "Rose",
+                 "Up-sampling"), 4))) 
 
 # Combine accuracy and auc tibbles for first set of models
-model.metrics.1 <- model.metrics.set1.auc %>% 
-  rbind(model.metrics.set1.accuracy)
+model.metrics <- model.metrics.auc %>% 
+  rbind(model.metrics.accuracy)
 
-model.metrics.1
+model.metrics
 ```
 
+```{r}
+cv.graph <- model.metrics %>% 
+  filter(.metric == "roc_auc") %>% 
+  ggplot(., aes(x = model,
+                y = mean,
+                color = class.imbalance)) +
+  geom_point() +
+  geom_line(aes(group = class.imbalance)) +
+  theme_classic() +
+  theme(legend.position = "bottom",
+        legend.background = element_rect(fill = "#000015",
+                                         colour = "#b3b3b3"),
+        panel.background = element_rect(fill = "#000015"),
+        plot.background = element_rect(fill = "#000015"),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
+        axis.line = element_blank(),
+        plot.title = element_text(hjust = 0.5)) +
+  ggtitle("Top-performing Models") +
+  xlab("Classifier") +
+  ylab("AUC") +
+  labs(color = "Imbalance Technique") +
+  scale_color_manual(values = c("#ff6600", "#3399ff", "#cc0000", "#33cc33"))
+
+# Save graph
+saveRDS(cv.graph, "../graphs/cv_graph.rds")
+```
 
 
 

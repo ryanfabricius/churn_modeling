@@ -21,7 +21,7 @@ library(dplyr)
 library(readr)
 ```
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 # Read in data
 churn.raw <- read_csv("data/Churn_Modelling.csv") %>%
   
@@ -39,10 +39,135 @@ When doealing with binary classification, it is important to analzye the class p
 read_rds("./graphs/imbalance_bar.rds")
 ```
 
+With a churn rate of approximately 20%, there is a moderate class imbalance problem. Exploring the sepeartion between pairs of the dimensions can provide helpful insights on the data.
 
+```{r, echo=FALSE}
+# Read in imbalance grid
+read_rds("./graphs/imbalance_grid.rds")
+```
 
+Different pairs of dimensions have varying degrees of seperation. Age seems to make classifying easier, as there seems to be little to no seperation between pairs of dimensions not containing age.
 
+Utlizing the themis package, techniques that will be used to try and "balance" the data include:  
+* SMOTE (Synthetic Minority Over-sampling Technique)  
+* ROSE (Generation of syntheic data by Randomly Over Sampling Examples)  
+* Up-Sampling (Random minority over-sampling with replacement)
+* None (control)  
 
+Altering the last step step of the recipe will take care of this.
+
+```{r, eval=FALSE}
+# Define the recipe for Up-Sampling
+churn.recipe.up <- recipe(Exited ~ ., 
+                          data = head(churn.training)) %>% 
+  
+  # Remove surname and rownumber
+  step_rm(one_of("RowNumber", "Surname")) %>% 
+  
+  # Carry's non-predictors through model
+  update_role(CustomerId, new_role = "Helper") %>% 
+  
+  # Convert outcome to nominal
+  step_num2factor(all_outcomes(), 
+                  levels = c("No", "Yes"),
+                  transform = function(x) {x + 1}) %>% 
+  
+  # Scale and Center Data
+  step_normalize(all_numeric(), -has_role(match = "Helper")) %>% 
+  
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal(), -all_outcomes()) %>% 
+  
+  # Remove correlated and near zero predictors
+  step_corr(all_numeric(), -has_role("Helper")) %>% 
+  step_nzv(all_predictors()) %>% 
+  
+  # Deal with class imbalance
+  step_upsample(Exited) # Up-Sampling step function using themis package
+```
+
+The effect of the class imbalance techniques will be analyzed using four different classification methods:  
+* glmnet  
+* random forest using the ranger package
+* Extreme Gradient Boosting using XGBoost
+* Support Vector Machines utlizing the radial basis function kernel
+
+Each classification method will be tuned using 10-fold cross validation created on the training set. This was performed through the tune and dials package in the tidymodels family.  
+
+```{r, eval=FALSE}
+# List of parsnip models
+
+# glmnet
+glmnet.mod <- logistic_reg(
+      mode = "classification",
+      penalty = tune(),
+      mixture = tune()) %>% 
+  set_engine("glmnet")
+
+# random forest 
+rf.mod <- rand_forest(
+      mode = "classification",
+      mtry = tune(),
+      min_n = tune(),
+      trees = tune()) %>% 
+  set_engine("ranger")
+
+# xgboost model
+xgb.mod <- boost_tree(
+      mode = "classification",
+      trees = tune(),
+      mtry = tune(),
+      min_n = tune(),
+      learn_rate = tune(),
+      loss_reduction = tune(),
+      sample_size = tune()) %>% 
+  set_engine("xgboost")
+
+# svm model
+svm.mod <- svm_rbf(
+      mode = "classification",
+      cost = tune(),
+      rbf_sigma = tune(),
+      margin = tune()) %>%
+  set_engine("kernlab")
+```
+
+```{r, eval=FALSE}
+# Hyperparameter Grids
+
+# glmnet
+glmnet.grid <- glmnet.mod %>% 
+      parameters() %>% 
+      grid_max_entropy(size = 50)
+
+# random forest
+rf.grid <- rf.mod %>% 
+  parameters() %>% 
+  update(mtry = mtry(c(1L, 5L)),
+         trees = trees(c(200L, 500L)))%>% 
+  grid_max_entropy(size = 50)
+
+# xgboost
+xgb.grid <- xgb.mod %>% 
+  parameters() %>% 
+  update(mtry = mtry(c(1L, 5L)),
+         trees = trees(c(200L, 500L))) %>% 
+  grid_max_entropy(size = 50)
+
+# svm
+svm.grid <- svm.mod %>% 
+  parameters() %>% 
+  grid_max_entropy(size = 50)
+```
+
+Models were evaluated using the AUC (Area Under the ROC Curve). Accuracy is misleading when classes are imbalanced. A method of always classifying a member as "not churning" would lead you to 80% accuracy. 
+
+```{r, echo=FALSE}
+# Read in metric graph
+read_rds("./graphs/cv_graph.rds")
+```
+
+XGBoost had the highest AUC by a narrow margin. Other than SMOTE, the class imbalance technqiues used do not show much variation from each other. Usually, it would then just be a standard practice to use the simplest model, of the indistinguishable models. However, the the AUC did drop slightly for the svm with no class imbalance technqiue. For this reason, Up-Sampling was chosen for the final model build of XGBoost.
 
 
 

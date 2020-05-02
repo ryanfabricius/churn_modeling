@@ -23,9 +23,9 @@ library(parsnip)
 
 # glmnet model
 glmnet.mod <- logistic_reg(
+      mode = "classification",
       penalty = tune(),
-      mixture = tune(),
-      mode = "classification") %>% 
+      mixture = tune()) %>% 
   set_engine("glmnet")
 
 # Random Forest Model
@@ -35,12 +35,33 @@ rf.mod <- rand_forest(
       min_n = tune(),
       trees = tune()) %>% 
   set_engine("ranger")
+
+# xgboost model
+xgb.mod <- boost_tree(
+      mode = "classification",
+      trees = tune(),
+      mtry = tune(),
+      min_n = tune(),
+      learn_rate = tune(),
+      loss_reduction = tune(),
+      sample_size = tune()) %>% 
+  set_engine("xgboost")
+
+# svm model
+svm.mod <- svm_rbf(
+      mode = "classification",
+      cost = tune(),
+      rbf_sigma = tune(),
+      margin = tune()) %>%
+  set_engine("kernlab")
 ```
 
 ```{r}
 # Save Models
-saveRDS(glmnet.mod, file = "../models/glmnet_mod.rds")
-saveRDS(rf.mod, file = "../models/rf_mod.rds")
+# saveRDS(glmnet.mod, file = "../models/glmnet_mod.rds")
+# saveRDS(rf.mod, file = "../models/rf_mod.rds")
+# saveRDS(xgb.mod, file = "../models/xgb_mod.rds")
+# saveRDS(svm.mod, file = "../models/svm_mod.rds")
 ```
 
 ```{r}
@@ -53,13 +74,27 @@ glmnet.grid <- glmnet.mod %>%
 rf.grid <- rf.mod %>% 
   parameters() %>% 
   update(mtry = mtry(c(1L, 5L)),
-         trees = trees(c(200L, 500L)) )%>% 
+         trees = trees(c(200L, 500L)))%>% 
+  grid_max_entropy(size = 50)
+
+# Create Hyperparameter Grid for xgboost
+xgb.grid <- xgb.mod %>% 
+  parameters() %>% 
+  update(mtry = mtry(c(1L, 5L)),
+         trees = trees(c(200L, 500L))) %>% 
+  grid_max_entropy(size = 50)
+
+# Create Hyperparameter Grid for svm
+svm.grid <- svm.mod %>% 
+  parameters() %>% 
   grid_max_entropy(size = 50)
 ```
 
 ```{r}
 # Save grids
-saveRDS(glmnet.grid, file = "../models/glmnet_grid.rds")
-saveRDS(rf.grid, file = "../models/rf_grid.rds")
+# saveRDS(glmnet.grid, file = "../models/glmnet_grid.rds")
+# saveRDS(rf.grid, file = "../models/rf_grid.rds")
+# saveRDS(xgb.grid, file = "../models/xgb_grid.rds")
+# saveRDS(svm.grid, file = "../models/svm_grid.rds")
 ```
 
