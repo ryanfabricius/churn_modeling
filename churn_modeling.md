@@ -270,14 +270,13 @@ xgb.roc.curve <- xgb.final.fit %>%
 ```
 
 <img src="churn_modeling_files/figure-gfm/unnamed-chunk-11-1.png" style="display: block; margin: auto;" />
-<br><br>  
-The Youden Index was used to calculate the optimal cutoff threshold for
-the probabilities. The Youden Index was chosen based off the finance
+<br> The Youden Index was used to calculate the optimal cutoff threshold
+for the probabilities. The Youden Index was chosen based off the finance
 scenario explained earlier, of trying to more accurately forecast
 revenue. Let’s say the team that deals with retainment wanted to use
 this model, then sensitivity should be increased at the expense of
 specificity. Predicted classes were then created using the threshold of
-.564, and easily visualized with a confusion matrix. <br><br>
+.556, and easily visualized with a confusion matrix. <br><br>
 <img src="churn_modeling_files/figure-gfm/unnamed-chunk-12-1.png" style="display: block; margin: auto;" />
 
 ### Conclusion
