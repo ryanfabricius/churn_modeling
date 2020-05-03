@@ -362,13 +362,10 @@ cv.graph <- model.metrics %>%
                                          colour = "#b3b3b3"),
         panel.background = element_rect(fill = "#000027"),
         plot.background = element_rect(fill = "#000027"),
-        text = element_text(colour = "#b3b3b3",
-                            size = 16),
-        axis.text = element_text(colour = "#b3b3b3",
-                                 size = 16),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
-        plot.title = element_text(hjust = 0.5,
-                                  size = 16)) +
+        plot.title = element_text(hjust = 0.5)) +
   ggtitle("Top-performing Models") +
   xlab("Classifier") +
   ylab("AUC") +

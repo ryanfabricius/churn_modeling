@@ -23,6 +23,8 @@ library(readr)
 library(recipes)
 library(ggplot2)
 library(pROC)
+library(ROC)
+library(plotROC)
 ```
 
 # Final Model
@@ -50,6 +52,7 @@ saveRDS(xgb.final.fit, "../models/xgb.final.fit")
 ```
 
 ```{r}
+xgb.final.fit <- read_rds("../models/xgb.final.fit")
 # Calculate Youden Index
 xgb.final.fit %>%
         collect_predictions() %>% 
@@ -73,7 +76,6 @@ xgb.roc.curve <- xgb.final.fit %>%
                  pointsize = 0.65,
                  labelround = 3, 
                  color = "#3399ff",
-                 labelsize = 8,
                  linealpha = 0.50) +
         theme_classic() +
         theme(legend.position = "bottom",
@@ -81,15 +83,12 @@ xgb.roc.curve <- xgb.final.fit %>%
                                                colour = "#b3b3b3"),
               panel.background = element_rect(fill = "#000027"),
               plot.background = element_rect(fill = "#000027"),
-              text = element_text(colour = "#b3b3b3", 
-                                  size = 16),
-              axis.text = element_text(colour = "#b3b3b3",
-                                       size = 16),
+              text = element_text(colour = "#b3b3b3"),
+              axis.text = element_text(colour = "#b3b3b3"),
               axis.line = element_blank(),
-              plot.title = element_text(hjust = 0.5,
-                                        size = 16),
+              plot.title = element_text(hjust = 0.5),
               plot.subtitle = element_text(hjust = 0.5,
-                                           size = 12,
+                                           size = 8,
                                            face = "italic")) +
         xlab("1 - Specificity") +
         ylab("Sensitivity") +
@@ -118,18 +117,15 @@ conf.mat <- conf_mat(last.fit.pred, truth = Exited, estimate = pred.class)[[1]] 
                   size = 10) +
         theme_classic() +
         theme(legend.position = "none",
-              plot.title = element_text(hjust = 0.5,
-                                        size = 16),
+              plot.title = element_text(hjust = 0.5),
               plot.subtitle = element_text(hjust = 0.5,
-                                           size = 12,
+                                           size = 8,
                                            face = "italic"),
               plot.background = element_rect(fill = "#000027"),
               panel.background = element_rect(fill = "#000027"),
-              axis.text = element_text(colour = "#b3b3b3",
-                                       size = 16),
+              axis.text = element_text(colour = "#b3b3b3"),
               axis.line = element_blank(),
-              text = element_text(colour = "#b3b3b3",
-                                  size = 16)) +
+              text = element_text(colour = "#b3b3b3")) +
         scale_x_discrete(limits = c("Yes", "No")) + 
         ggtitle("Confusion Matrix",
                 subtitle = "Predicted Classes using Youden Index Threshold")
