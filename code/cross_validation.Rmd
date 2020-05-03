@@ -269,28 +269,6 @@ svm.wrkflw.tuned.up <- svm.wrkflw.up %>%
 rf.wrkflw.tuned.up %>% show_best(metric = "roc_auc")
 ```
 
-```{r}
-glmnet.wrkflw.tuned.no <- read_rds("../models/glmnet_wrkflw_tuned_none.rds")
-glmnet.wrkflw.tuned.up <- read_rds("../models/glmnet_wrkflw_tuned_up.rds")
-glmnet.wrkflw.tuned.sm <- read_rds("../models/glmnet_wrkflw_tuned_smote.rds")
-glmnet.wrkflw.tuned.rose <- read_rds("../models/glmnet_wrkflw_tuned_rose.rds")
-
-rf.wrkflw.tuned.no <- read_rds("../models/rf_wrkflw_tuned_none.rds")
-rf.wrkflw.tuned.up <- read_rds("../models/rf_wrkflw_tuned_up.rds")
-rf.wrkflw.tuned.sm <- read_rds("../models/rf_wrkflw_tuned_smote.rds")
-rf.wrkflw.tuned.rose <- read_rds("../models/rf_wrkflw_tuned_rose.rds")
-
-xgb.wrkflw.tuned.no <- read_rds("../models/xgb_wrkflw_tuned_none.rds")
-xgb.wrkflw.tuned.up <- read_rds("../models/xgb_wrkflw_tuned_up.rds")
-xgb.wrkflw.tuned.sm <- read_rds("../models/xgb_wrkflw_tuned_smote.rds")
-xgb.wrkflw.tuned.rose <- read_rds("../models/xgb_wrkflw_tuned_rose.rds")
-
-svm.wrkflw.tuned.no <- read_rds("../models/svm_wrkflw_tuned_none.rds")
-svm.wrkflw.tuned.up <- read_rds("../models/svm_wrkflw_tuned_up.rds")
-svm.wrkflw.tuned.sm <- read_rds("../models/svm_wrkflw_tuned_smote.rds")
-svm.wrkflw.tuned.rose <- read_rds("../models/svm_wrkflw_tuned_rose.rds")
-```
-
 
 ```{r}
 # Table of AUC for every classification X imbalance technique combination
@@ -362,13 +340,10 @@ cv.graph <- model.metrics %>%
                                          colour = "#b3b3b3"),
         panel.background = element_rect(fill = "#000027"),
         plot.background = element_rect(fill = "#000027"),
-        text = element_text(colour = "#b3b3b3",
-                            size = 16),
-        axis.text = element_text(colour = "#b3b3b3",
-                                 size = 16),
+        text = element_text(colour = "#b3b3b3"),
+        axis.text = element_text(colour = "#b3b3b3"),
         axis.line = element_blank(),
-        plot.title = element_text(hjust = 0.5,
-                                  size = 16)) +
+        plot.title = element_text(hjust = 0.5)) +
   ggtitle("Top-performing Models") +
   xlab("Classifier") +
   ylab("AUC") +
