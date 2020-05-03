@@ -50,7 +50,6 @@ xgb.final.fit <- xgb.wrkflw.finalized %>%
 ```
 
 ```{r}
-<<<<<<< HEAD
 xgb.final.fit <- read_rds("../models/xgb.final.fit")
 # Calculate Youden Index
 xgb.final.fit %>%
@@ -66,8 +65,6 @@ xgb.final.fit %>%
         print.auc.y = .15,
         )
 
-=======
->>>>>>> 269e2c0bd2ccb494a4ae3ed21cd0b40515fd93f6
 # Create ROC curve
 xgb.roc.curve <- xgb.final.fit %>%
         collect_predictions() %>% 
@@ -105,7 +102,7 @@ saveRDS(xgb.roc.curve, file = "../graphs/roc_curve.rds")
 # Predictions using threshold
 last.fit.pred <- xgb.final.fit %>% 
         collect_predictions() %>% 
-        mutate(pred.class = factor(ifelse(.pred_Yes >= .564, "Yes", "No"))) %>% 
+        mutate(pred.class = factor(ifelse(.pred_Yes >= .556, "Yes", "No"))) %>% 
         dplyr::select(pred.class, Exited) 
 
 conf.mat <- conf_mat(last.fit.pred, truth = Exited, estimate = pred.class)[[1]] %>% 

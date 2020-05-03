@@ -225,13 +225,8 @@ xgb.roc.curve <- xgb.final.fit %>%
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
 read_rds("./graphs/roc_curve.rds")
 ```
-<<<<<<< HEAD
 <br>
 The Youden Index was used to calculate the optimal cutoff threshold for the probabilities. The Youden Index was chosen based off the finance scenario explained earlier, of trying to more accurately forecast revenue. Let's say the team that deals with retainment wanted to use this model, then sensitivity should be increased at the expense of specificity. Predicted classes were then created using the threshold of .556, and easily visualized with a confusion matrix.
-=======
-<br><br>  
-The Youden Index was used to calculate the optimal cutoff threshold for the probabilities. The Youden Index was chosen based off the finance scenario explained earlier, of trying to more accurately forecast revenue. Let's say the team that deals with retainment wanted to use this model, then sensitivity should be increased at the expense of specificity. Predicted classes were then created using the threshold of .564, and easily visualized with a confusion matrix.
->>>>>>> 269e2c0bd2ccb494a4ae3ed21cd0b40515fd93f6
 <br><br>
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, fig.align='center'}
 read_rds("./graphs/conf_mat.rds")

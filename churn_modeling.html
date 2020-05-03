@@ -557,7 +557,6 @@ xgb.roc.curve &lt;- xgb.final.fit %&gt;%
         ggplot(., aes(d = Exited, m = .pred_Yes, color = &quot;#cc0000&quot;)) +
         geom_roc(cutoffs.at = .564,
                  pointsize = 0.65,
-                 labelsize = 8,
                  labelround = 3, 
                  color = &quot;#3399ff&quot;,
                  linealpha = 0.50) +
@@ -567,15 +566,12 @@ xgb.roc.curve &lt;- xgb.final.fit %&gt;%
                                                colour = &quot;#b3b3b3&quot;),
               panel.background = element_rect(fill = &quot;#000027&quot;),
               plot.background = element_rect(fill = &quot;#000027&quot;),
-              text = element_text(colour = &quot;#b3b3b3&quot;, 
-                                  size = 16),
-              axis.text = element_text(colour = &quot;#b3b3b3&quot;,
-                                       size = 16),
+              text = element_text(colour = &quot;#b3b3b3&quot;),
+              axis.text = element_text(colour = &quot;#b3b3b3&quot;),
               axis.line = element_blank(),
-              plot.title = element_text(hjust = 0.5,
-                                        size = 16),
+              plot.title = element_text(hjust = 0.5),
               plot.subtitle = element_text(hjust = 0.5,
-                                           size = 12,
+                                           size = 8,
                                            face = &quot;italic&quot;)) +
         xlab(&quot;1 - Specificity&quot;) +
         ylab(&quot;Sensitivity&quot;) +
