@@ -72,7 +72,7 @@ xgb.roc.curve <- xgb.final.fit %>%
         collect_predictions() %>% 
         dplyr::select(.pred_Yes, Exited) %>% 
         ggplot(., aes(d = Exited, m = .pred_Yes, color = "#cc0000")) +
-        geom_roc(cutoffs.at = .564,
+        geom_roc(cutoffs.at = .556,
                  pointsize = 0.65,
                  labelround = 3, 
                  color = "#3399ff",
@@ -94,8 +94,6 @@ xgb.roc.curve <- xgb.final.fit %>%
         ylab("Sensitivity") +
         ggtitle("ROC Curve", 
                 subtitle = "Optimal Threshold defined by Youden Index")
-
-xgb.roc.curve
 
 saveRDS(xgb.roc.curve, file = "../graphs/roc_curve.rds")
 ```
