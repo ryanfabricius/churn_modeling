@@ -45,13 +45,12 @@ xgb.wrkflw.finalized <- workflow() %>%
         finalize_workflow(xgb.up.params)
 
 # Final fit
-set.seed(12)
 xgb.final.fit <- xgb.wrkflw.finalized %>% 
         last_fit(churn.split)
-saveRDS(xgb.final.fit, "../models/xgb.final.fit")
 ```
 
 ```{r}
+<<<<<<< HEAD
 xgb.final.fit <- read_rds("../models/xgb.final.fit")
 # Calculate Youden Index
 xgb.final.fit %>%
@@ -67,12 +66,14 @@ xgb.final.fit %>%
         print.auc.y = .15,
         )
 
+=======
+>>>>>>> 269e2c0bd2ccb494a4ae3ed21cd0b40515fd93f6
 # Create ROC curve
 xgb.roc.curve <- xgb.final.fit %>%
         collect_predictions() %>% 
         dplyr::select(.pred_Yes, Exited) %>% 
         ggplot(., aes(d = Exited, m = .pred_Yes, color = "#cc0000")) +
-        geom_roc(cutoffs.at = .556,
+        geom_roc(cutoffs.at = .564,
                  pointsize = 0.65,
                  labelround = 3, 
                  color = "#3399ff",
@@ -104,7 +105,7 @@ saveRDS(xgb.roc.curve, file = "../graphs/roc_curve.rds")
 # Predictions using threshold
 last.fit.pred <- xgb.final.fit %>% 
         collect_predictions() %>% 
-        mutate(pred.class = factor(ifelse(.pred_Yes >= .556, "Yes", "No"))) %>% 
+        mutate(pred.class = factor(ifelse(.pred_Yes >= .564, "Yes", "No"))) %>% 
         dplyr::select(pred.class, Exited) 
 
 conf.mat <- conf_mat(last.fit.pred, truth = Exited, estimate = pred.class)[[1]] %>% 
@@ -129,7 +130,7 @@ conf.mat <- conf_mat(last.fit.pred, truth = Exited, estimate = pred.class)[[1]] 
         scale_x_discrete(limits = c("Yes", "No")) + 
         ggtitle("Confusion Matrix",
                 subtitle = "Predicted Classes using Youden Index Threshold")
-conf.mat
+
 saveRDS(conf.mat, "../graphs/conf_mat.rds")
 ```
 
