@@ -23,7 +23,6 @@ library(readr)
 library(recipes)
 library(ggplot2)
 library(pROC)
-library(ROC)
 library(plotROC)
 ```
 
@@ -45,12 +44,15 @@ xgb.wrkflw.finalized <- workflow() %>%
         finalize_workflow(xgb.up.params)
 
 # Final fit
+set.seed(12)
 xgb.final.fit <- xgb.wrkflw.finalized %>% 
         last_fit(churn.split)
+
+saveRDS(xgb.final.fit, "../models/xgb_final_fit")
 ```
 
 ```{r}
-xgb.final.fit <- read_rds("../models/xgb.final.fit")
+xgb.final.fit <- read_rds("../models/xgb_final_fit")
 # Calculate Youden Index
 xgb.final.fit %>%
         collect_predictions() %>% 
